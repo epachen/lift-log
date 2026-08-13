@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Lift Log</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#E9E7E2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Lift Log">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{
+  --chalk:#E9E7E2; --chalkDeep:#DAD7D0; --steel:#242A30; --steelSoft:#4A545E;
+  --line:#C3BFB6; --red:#B8332A; --blue:#1F5C8B; --yellow:#E0AC1C; --green:#2C7A4B;
+  --paper:#F4F2EE;
+  --mono:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace;
+  --sans:'Helvetica Neue',Inter,system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--chalk);color:var(--steel);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;overscroll-behavior-y:contain}
+body{padding-top:env(safe-area-inset-top)}
+#app{max-width:460px;margin:0 auto;min-height:100vh;padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+button{font-family:var(--sans);cursor:pointer}
+input{font-family:var(--mono)}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--steelSoft);font-weight:600}
+.btn{border:none;border-radius:2px;padding:15px 22px;width:100%;font-size:14px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--paper);background:var(--steel);
+  display:block;margin-bottom:8px}
+.btn.red{background:var(--red)} .btn.green{background:var(--green)}
+.btn.ghost{background:transparent;color:var(--steelSoft);border:1px solid var(--line)}
+.btn.small{padding:9px 14px;font-size:12px;margin-bottom:0}
+.btn:disabled{opacity:.4}
+.pad{padding:0 18px 40px}
+.hd{font-size:30px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px}
+.card{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--steel);
+  margin-bottom:12px;padding:14px 14px 8px}
+.card.done{border-color:var(--green);border-left-color:var(--green)}
+.card h3{font-size:18px;font-weight:700;margin:3px 0 0;letter-spacing:-.01em}
+.howbtn{background:none;border:1px solid var(--line);border-radius:2px;padding:7px 11px;
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--steelSoft);margin-top:8px}
+.how{margin-top:10px;border:1px solid var(--line)}
+.how svg{width:100%;height:150px;display:block;background:#fff}
+.cues{padding:10px 12px;border-top:1px solid var(--line);background:#fff}
+.cue{display:flex;gap:8px;margin-bottom:6px;font-size:13px;line-height:1.45}
+.cue span:first-child{color:var(--red);font-family:var(--mono);font-weight:700}
+.swaps{padding:10px 12px;border-top:1px solid var(--line);background:var(--chalkDeep)}
+.swap{display:block;width:100%;text-align:left;margin-top:7px;padding:9px 10px;background:#fff;
+  border:1px solid var(--line);border-radius:2px}
+.swap b{font-size:13px;display:block} .swap i{font-size:11.5px;color:var(--steelSoft);font-style:normal;display:block;margin-top:2px}
+.loadup{margin-top:10px;background:var(--yellow);color:var(--steel);padding:7px 10px;
+  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em}
+.setrow{display:grid;grid-template-columns:28px 1fr 1fr;gap:8px;align-items:center;margin-bottom:8px}
+.setno{font-family:var(--mono);font-size:12px;color:var(--steelSoft);font-weight:600}
+.inp{width:100%;padding:11px 10px;font-size:16px;font-weight:600;color:var(--steel);
+  background:#fff;border:1px solid var(--line);border-radius:2px;outline:none}
+.inp.filled{background:var(--chalkDeep)}
+.inp.top{background:#E8F1EA;border-color:var(--green)}
+.last{font-family:var(--mono);font-size:10px;color:var(--steelSoft);padding-bottom:6px;letter-spacing:.04em}
+.bar{height:6px;background:var(--chalkDeep);margin-top:14px}
+.bar > i{display:block;height:100%;background:var(--red)}
+.note{padding:14px;background:var(--paper);border:1px solid var(--line);font-size:13px;
+  color:var(--steelSoft);line-height:1.65;margin-top:22px}
+.note strong{color:var(--steel)}
+.sticky{position:sticky;top:0;background:var(--chalk);padding:18px 0 12px;
+  border-bottom:1px solid var(--line);z-index:20}
+.rest{position:fixed;left:0;right:0;bottom:0;background:var(--steel);color:var(--paper);
+  padding:12px 18px calc(16px + env(safe-area-inset-bottom));z-index:60;max-width:460px;margin:0 auto}
+.rest .t{font-family:var(--mono);font-size:30px;font-weight:700}
+.rest .track{height:3px;background:#39414A;margin-top:8px}
+.rest .track > i{display:block;height:100%;background:var(--yellow);transition:width 1s linear}
+.rung{display:block;width:100%;text-align:left;background:transparent;color:var(--steel);
+  border:1px solid var(--line);border-radius:2px;padding:13px 14px;margin-bottom:8px}
+.rung.on{background:var(--steel);color:var(--paper);border-color:var(--steel)}
+.rung.past{color:var(--steelSoft)}
+.spark{display:flex;align-items:flex-end;gap:3px;height:44px;margin-top:8px}
+.spark > i{flex:1;max-width:22px;background:var(--steelSoft)}
+.spark > i.now{background:var(--red)}
+.warm{margin-top:14px;padding:14px;background:var(--steel);color:var(--paper)}
+.warm div{font-size:13px;margin-top:7px;line-height:1.45;opacity:.9}
+.plates{display:flex;gap:4px}
+.plates > i{width:7px;height:14px;border-radius:1px;display:block}
+
+/* ---------- tab bar ---------- */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--paper);
+  border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);
+  padding-bottom:env(safe-area-inset-bottom);max-width:460px;margin:0 auto}
+.tab{background:none;border:none;padding:10px 4px 9px;display:flex;flex-direction:column;
+  align-items:center;gap:4px;color:var(--steelSoft)}
+.tab.on{color:var(--steel)}
+.tab .lb{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:700}
+.tab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tab.on .dot{position:absolute;top:2px;width:16px;height:2px;background:var(--red)}
+
+/* ---------- today ---------- */
+.dial{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.metric{background:var(--paper);border:1px solid var(--line);padding:11px 10px;text-align:center}
+.metric .v{font-family:var(--mono);font-size:21px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.metric .l{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--steelSoft);
+  text-transform:uppercase;margin-top:3px}
+.metric .t{height:3px;background:var(--chalkDeep);margin-top:7px}
+.metric .t > i{display:block;height:100%}
+.check{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:var(--paper);
+  border:1px solid var(--line);border-radius:2px;padding:12px 13px;margin-bottom:7px;color:var(--steel)}
+.check.on{background:#E8F1EA;border-color:var(--green)}
+.box{width:19px;height:19px;border:2px solid var(--line);border-radius:2px;flex:none;
+  display:grid;place-items:center;font-size:12px;font-weight:700;color:transparent}
+.check.on .box{background:var(--green);border-color:var(--green);color:#fff}
+.check .tx{font-size:14px;font-weight:600;flex:1}
+.check .sub{font-size:11.5px;color:var(--steelSoft);font-weight:400;display:block;margin-top:2px}
+.check.on .tx{text-decoration:line-through;text-decoration-color:var(--line)}
+.del{background:none;border:none;color:var(--line);font-family:var(--mono);font-size:15px;padding:0 2px}
+.week{display:flex;gap:5px;margin-top:12px}
+.week > div{flex:1;text-align:center}
+.week .d{font-family:var(--mono);font-size:9px;color:var(--steelSoft);letter-spacing:.06em}
+.week .p{height:26px;margin-top:4px;background:var(--chalkDeep);position:relative}
+.week .p > i{position:absolute;bottom:0;left:0;right:0;background:var(--green);display:block}
+.week .p.today{outline:2px solid var(--steel);outline-offset:1px}
+.tapz{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:9px}
+.tapz button{background:#fff;border:1px solid var(--line);border-radius:2px;padding:11px 4px;
+  font-family:var(--mono);font-size:12px;font-weight:700;color:var(--steel)}
+.rt{padding:13px;border:1px solid var(--line);background:var(--paper);margin-bottom:8px}
+.rt .h{font-size:14px;font-weight:700} .rt .b{font-size:12.5px;color:var(--steelSoft);margin-top:4px;line-height:1.5}
+.pill{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.1em;padding:3px 7px;
+  border-radius:2px;text-transform:uppercase;font-weight:700}
+code{font-family:var(--mono);font-size:11.5px;background:var(--chalkDeep);padding:2px 5px;border-radius:2px;
+  word-break:break-all}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ============================ data ============================ */
+const PROGRAM = {
+A:{name:"Workout A",lifts:[
+ {id:"legpress",dia:"legpress",name:"Leg press",sets:3,lo:10,hi:12,inc:5,unit:"kg",
+  cues:["Feet shoulder-width, mid-platform","Lower until the knees reach about 90°","Push through the heels, don't slam the lockout"],
+  swaps:[{id:"rackgoblet",name:"Rack goblet squat",dia:"goblet",why:"5 racks — always one free"},
+         {id:"splitsquat",name:"Bulgarian split squat",dia:"goblet",why:"Just a bench and one dumbbell"}]},
+ {id:"dbbench",dia:"dbbench",name:"Dumbbell bench press",sets:3,lo:8,hi:12,inc:2,unit:"kg",
+  cues:["Log the weight of ONE dumbbell","Elbows about 45° from your body","Lower to chest level, no bouncing"],
+  swaps:[{id:"machinepress",name:"Chest press machine",dia:"dbbench",why:"If every bench is taken"},
+         {id:"pushup",name:"Push-ups",dia:"plank",why:"No equipment — log reps only"}]},
+ {id:"pulldown",dia:"pulldown",name:"Lat pulldown",sets:3,lo:10,hi:12,inc:2.5,unit:"kg",
+  cues:["Pull to your upper chest, never behind the neck","Drive the elbows down and back","Control the way up — that's half the work"],
+  swaps:[{id:"assistedpu",name:"Assisted pull-up machine",dia:"hang",why:"Same muscles, closer to the goal"}]},
+ {id:"cablerow",dia:"cablerow",name:"Seated cable row",sets:3,lo:10,hi:12,inc:2.5,unit:"kg",
+  cues:["Chest up, small arch, don't round the back","Pull to your belly button","No leaning back to move the weight"],
+  swaps:[{id:"dbrow",name:"One-arm dumbbell row",dia:"csrow",why:"Bench + dumbbell, always available"}]},
+ {id:"dbpress",dia:"dbpress",name:"Dumbbell shoulder press",sets:2,lo:10,hi:12,inc:1,unit:"kg",
+  cues:["Seated with the back supported","Start at ear height","Press up, not forward — don't flare the ribs"],
+  swaps:[{id:"machshoulder",name:"Shoulder press machine",dia:"dbpress",why:"Easier to set up when you're tired"}]}]},
+B:{name:"Workout B",lifts:[
+ {id:"goblet",dia:"goblet",name:"Goblet squat",sets:3,lo:10,hi:12,inc:2.5,unit:"kg",
+  cues:["Dumbbell held vertical against your chest","Sit down between your hips, chest tall","Depth beats weight — as low as you control"],
+  swaps:[{id:"racksquat",name:"Rack squat (start with the empty bar)",dia:"goblet",why:"Once the goblet gets awkward to hold"},
+         {id:"legpressB",name:"Leg press",dia:"legpress",why:"If you want to go heavier"}]},
+ {id:"rdl",dia:"rdl",name:"Romanian deadlift",sets:3,lo:8,hi:10,inc:2,unit:"kg",
+  cues:["Push the hips BACK — don't just bend the knees","Dumbbells stay close to your legs","Stop when the hamstrings stretch, not lower"],
+  swaps:[{id:"barrdl",name:"Barbell RDL in the rack",dia:"rdl",why:"Set the pins at hip height"}]},
+ {id:"incline",dia:"incline",name:"Incline dumbbell press",sets:3,lo:8,hi:12,inc:2,unit:"kg",
+  cues:["Bench at about 30°, no steeper","Weight of ONE dumbbell","Wrists stacked over the elbows"],
+  swaps:[{id:"flatdb",name:"Flat dumbbell press",dia:"dbbench",why:"If the incline benches are gone"}]},
+ {id:"csrow",dia:"csrow",name:"Chest-supported row",sets:3,lo:10,hi:12,inc:2.5,unit:"kg",
+  cues:["Chest stays glued to the pad","Elbows drive back past your ribs","Pause for a beat at the top"],
+  swaps:[{id:"dbrowB",name:"One-arm dumbbell row",dia:"csrow",why:"Bench + dumbbell fallback"},
+         {id:"machrow",name:"Any machine row",dia:"cablerow",why:"Whatever's free"}]},
+ {id:"lateral",dia:"lateral",name:"Lateral raise",sets:2,lo:12,hi:15,inc:1,unit:"kg",
+  cues:["Go light — lighter than feels right","Lead with the elbows, not the hands","Stop at shoulder height"],
+  swaps:[{id:"cablelat",name:"Cable lateral raise",dia:"lateral",why:"Smoother if the cable stack is free"}]}]}
+};
+const CORE=[
+ {id:"crunch",dia:"crunch",name:"Crunches",sets:3,lo:15,hi:20,inc:0,unit:"bw",
+  cues:["Curl the ribs toward the hips","Don't yank on your neck","Slow — 2 seconds up, 2 down"],swaps:[]},
+ {id:"plank",dia:"plank",name:"Plank",sets:3,lo:30,hi:45,inc:0,unit:"sec",
+  cues:["Elbows under the shoulders","Squeeze the glutes so the hips don't sag","Stop when form breaks, not when the timer ends"],swaps:[]},
+ {id:"sideplank",dia:"sideplank",name:"Side plank",sets:2,lo:20,hi:30,inc:0,unit:"sec",
+  cues:["Stack the hips and the feet","Push the bottom shoulder away from your ear","One set per side"],swaps:[]}];
+const WARMUP=["5 minutes on the bike or treadmill — warm up, don't tire out",
+ "10 bodyweight squats, 10 arm circles each way",
+ "One light set of your first exercise at about half your working weight"];
+const RUNGS=[["Lat pulldown","Build to 8 clean reps at roughly your bodyweight."],
+ ["Negatives","Jump to the top, lower for 5 seconds. 3 sets of 3–5."],
+ ["Assisted machine","Set the assistance so 6–8 is hard. Drop it every fortnight."],
+ ["Inverted rows","Bar in the rack at hip height, chest to bar. Lower it to make it harder."],
+ ["First strict pull-up","Chin over the bar, dead hang, no kipping."]];
+const REST=90, KEY="liftlog.v1", TARGET=48;
+
+/* ========================== diagrams ========================== */
+const P=a=>({h:[a[0],a[1]],n:[a[2],a[3]],p:[a[4],a[5]],k:[a[6],a[7]],a:[a[8],a[9]],e:[a[10],a[11]],d:[a[12],a[13]]});
+const L=arr=>arr.map(v=>v.join(",")).join(" ");
+function fig(j,ghost,arm2){
+  const c=ghost?"#C3BFB6":"#242A30", w=ghost?3:4;
+  let s=`<g stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" fill="none">`;
+  s+=`<circle cx="${j.h[0]}" cy="${j.h[1]}" r="7" fill="${c}" stroke="none"/>`;
+  s+=`<polyline points="${L([j.n,j.p,j.k,j.a])}"/>`;
+  s+=`<polyline points="${L([j.n,j.e,j.d])}"/>`;
+  if(arm2) s+=`<polyline points="${L([j.n,arm2[0],arm2[1]])}"/>`;
+  return s+"</g>";
+}
+const ground=(y=126)=>`<line x1="8" y1="${y}" x2="192" y2="${y}" stroke="#C3BFB6" stroke-width="2" stroke-dasharray="4 4"/>`;
+const bar=(a,b,c,d)=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="#4A545E" stroke-width="4" stroke-linecap="round"/>`;
+const pad=(a,b,c,d)=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="#1F5C8B" stroke-width="7" stroke-linecap="round" opacity=".85"/>`;
+const bell=(x,y)=>`<circle cx="${x}" cy="${y}" r="6" fill="#B8332A"/>`;
+let ai=0;
+function arrow(a,b,c,d){const id="m"+(ai++);
+  return `<defs><marker id="${id}" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#E0AC1C"/></marker></defs>`+
+  `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="#E0AC1C" stroke-width="3" marker-end="url(#${id})" stroke-linecap="round"/>`;}
+
+const DIA={
+ legpress:()=>pad(34,52,62,100)+bar(128,52,152,92)
+   +fig(P([56,62,64,70,82,88,112,68,130,86,70,82,78,88]),1)
+   +fig(P([56,62,64,70,82,88,122,74,152,60,70,82,78,88]))+arrow(118,100,146,82),
+ dbbench:()=>pad(58,92,120,92)+ground()
+   +fig(P([60,82,74,86,112,88,130,100,134,124,80,100,88,96]),1)
+   +fig(P([60,82,74,86,112,88,130,100,134,124,84,70,88,58]))+bell(88,58)+arrow(104,92,104,62),
+ pulldown:()=>bar(60,30,132,30)+pad(78,98,112,98)+ground()
+   +fig(P([88,60,88,72,94,98,118,98,122,122,92,50,96,32]),1)
+   +fig(P([88,60,88,72,94,98,118,98,122,122,72,80,90,68]))+arrow(126,44,126,74),
+ cablerow:()=>pad(56,100,86,100)+ground()
+   +fig(P([68,58,68,70,74,100,108,96,130,112,92,76,116,80]),1)
+   +fig(P([66,56,66,68,74,100,108,96,130,112,52,78,84,78]))
+   +`<line x1="116" y1="80" x2="176" y2="86" stroke="#4A545E" stroke-width="2"/>`+arrow(126,60,96,60),
+ dbpress:()=>pad(76,100,110,100)+ground()
+   +fig(P([90,54,90,66,94,100,118,100,122,124,76,80,74,66]),1)
+   +fig(P([90,54,90,66,94,100,118,100,122,124,86,50,88,34]))+bell(88,34)+arrow(120,72,120,42),
+ goblet:()=>ground()
+   +fig(P([96,28,96,42,96,80,96,102,96,124,106,58,106,50]),1)
+   +fig(P([86,46,88,58,78,88,104,100,98,124,98,72,98,64]))+bell(98,64)+arrow(130,52,130,86),
+ rdl:()=>ground()
+   +fig(P([98,28,98,42,98,80,98,102,98,124,102,60,102,78]),1)
+   +fig(P([66,54,76,60,106,76,100,102,98,124,84,78,84,98]))+bell(84,100)+arrow(132,48,118,74),
+ incline:()=>pad(64,112,116,70)+ground()
+   +fig(P([110,60,102,72,80,100,106,110,122,124,92,96,102,90]),1)
+   +fig(P([110,60,102,72,80,100,106,110,122,124,106,62,110,48]))+bell(110,48)+arrow(130,86,136,58),
+ csrow:()=>pad(70,110,106,62)+ground()
+   +fig(P([70,54,80,64,104,94,110,114,114,126,80,86,80,106]),1)
+   +fig(P([70,54,80,64,104,94,110,114,114,126,62,84,78,78]))+arrow(46,106,46,80),
+ lateral:()=>ground()
+   +fig(P([100,28,100,44,100,84,100,104,100,124,88,62,86,80]),1,[[112,62],[114,80]])
+   +fig(P([100,28,100,44,100,84,100,104,100,124,76,46,58,44]),0,[[124,46],[142,44]])
+   +bell(58,44)+bell(142,44)+arrow(60,76,52,56),
+ crunch:()=>ground(120)
+   +fig(P([62,104,76,110,104,114,126,96,134,118,70,100,62,96]),1)
+   +fig(P([74,84,84,94,104,114,126,96,134,118,78,84,72,78]))+arrow(56,92,66,74),
+ plank:()=>ground(112)+fig(P([56,68,70,76,112,92,134,100,152,110,70,106,54,106]))
+   +`<line x1="70" y1="76" x2="70" y2="106" stroke="#E0AC1C" stroke-width="2" stroke-dasharray="3 3"/>`
+   +`<text x="118" y="70" font-family="ui-monospace,monospace" font-size="9" fill="#4A545E">hips level</text>`,
+ sideplank:()=>ground(112)
+   +fig(P([54,66,68,74,112,94,134,102,152,110,68,104,54,104]),0,[[70,54],[72,36]])
+   +`<text x="102" y="68" font-family="ui-monospace,monospace" font-size="9" fill="#4A545E">stack the hips</text>`,
+ hang:()=>bar(52,26,148,26)
+   +fig(P([100,58,100,70,100,98,100,116,100,126,100,48,100,28]),1)
+   +fig(P([100,36,100,48,100,78,100,100,100,116,84,44,96,28]))+arrow(134,66,134,42)
+};
+const svg=id=>DIA[id]?`<svg viewBox="0 0 200 140" role="img" aria-label="form diagram"><rect width="200" height="140" fill="#fff"/>${DIA[id]()}</svg>`:"";
+
+
+/* ========================= daily config ========================= */
+const DEFAULT_TASKS=[
+ {id:"protein",t:"Hit protein target",s:"Every meal. This is the one people miss."},
+ {id:"water",t:"2L of water",s:"Eight cups. Tap the counter above."},
+ {id:"steps",t:"7–8k steps",s:"Across the whole day, not one walk."},
+ {id:"creatine",t:"Creatine, 5g",s:"Any time of day. Consistency is all that matters."},
+ {id:"sleep",t:"7 hours in bed",s:"Blunts everything else if you skip it."},
+ {id:"5bx",t:"5BX — Chart 1",s:"Non-gym mornings. Eleven minutes."}
+];
+const MORNING=[
+ ["Big glass of water","You're dehydrated after eight hours. Do this before coffee."],
+ ["5BX or a walk","Eleven minutes, or get out for twenty. Non-gym days only."],
+ ["Protein at breakfast","Eggs, Greek yoghurt, a shake — whatever's fastest."],
+ ["Pack the gym bag now","Deciding at 5pm is how sessions get skipped."]
+];
+const BEDTIME=[
+ ["Phone down 30 minutes before","The single highest-leverage change for sleep quality."],
+ ["Lights low from 9:30","Signals melatonin. Lamps, not the ceiling light."],
+ ["Gym gear by the door","Removes one decision from tomorrow."],
+ ["In bed by 10:30","Seven and a half hours before a 6am alarm."]
+];
+const WATER_TARGET=8, STEP_TARGET=7500;
+
+/* ========================== storage ========================== */
+const KEY2="liftlog.v2";
+function load(){try{const r=localStorage.getItem(KEY2);if(r)return migrate(JSON.parse(r));
+  const old=localStorage.getItem("liftlog.v1");
+  if(old){const d=JSON.parse(old);return migrate({sessions:d.sessions||[],rung:d.rung||0})}
+  }catch(e){}
+  return migrate({});}
+function migrate(d){
+  d.sessions=d.sessions||[]; d.rung=d.rung||0; d.days=d.days||{};
+  d.tasks=d.tasks||DEFAULT_TASKS.slice(); d.bodyweight=d.bodyweight||null;
+  return d;}
+function save(d){try{localStorage.setItem(KEY2,JSON.stringify(d));return true}catch(e){return false}}
+
+const todayKey=()=>{const n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")};
+function day(k){k=k||todayKey();
+  if(!S.data.days[k]) S.data.days[k]={water:0,steps:0,protein:0,done:{}};
+  return S.data.days[k];}
+
+/* ========================== state ========================== */
+let S={tab:"today",view:null,data:load(),workout:"A",entries:{},swaps:{},open:{},result:null,warm:true,timer:null};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const base=w=>PROGRAM[w].lifts.concat(CORE);
+const resolve=l=>S.swaps[l.id]?Object.assign({},l,{id:S.swaps[l.id].id,name:S.swaps[l.id].name,dia:S.swaps[l.id].dia,from:l.name,swaps:[]}):l;
+const lifts=()=>base(S.workout).map(resolve);
+
+function lastOf(w){for(let i=S.data.sessions.length-1;i>=0;i--) if(S.data.sessions[i].workout===w) return S.data.sessions[i];return null}
+function target(w,l){
+  const last=lastOf(w); if(!last) return {weight:"",earned:false,prev:null};
+  const rows=last.entries[l.id]; if(!rows||!rows.length) return {weight:"",earned:false,prev:null};
+  const done=rows.filter(r=>r.reps!=="");
+  if(done.length<l.sets) return {weight:rows[0].weight||"",earned:false,prev:rows};
+  const allTop=done.every(r=>Number(r.reps)>=l.hi), n=Number(rows[0].weight);
+  if(allTop&&l.inc>0&&!isNaN(n)&&n>0) return {weight:String(n+l.inc),earned:true,prev:rows};
+  return {weight:rows[0].weight||"",earned:false,prev:rows};
+}
+const nextW=()=>!S.data.sessions.length?"A":(S.data.sessions[S.data.sessions.length-1].workout==="A"?"B":"A");
+function week(){const s=S.data.sessions;if(!s.length)return 1;
+  return Math.min(17,Math.floor((Date.now()-new Date(s[0].date))/864e5/7)+1)}
+const proteinTarget=()=>S.data.bodyweight?Math.round(S.data.bodyweight*1.8):null;
+const trainedToday=()=>S.data.sessions.some(s=>s.date.slice(0,10)===todayKey());
+
+/* ================== Apple Shortcuts URL handling ================== */
+/* A Shortcut can read Health data and open  ...?steps=8234           */
+function handleParams(){
+  const q=new URLSearchParams(location.search); if(![...q.keys()].length) return;
+  const d=day();
+  if(q.has("steps")) d.steps=Math.max(0,parseInt(q.get("steps"),10)||0);
+  if(q.has("water")) d.water=Math.min(30,d.water+(parseInt(q.get("water"),10)||1));
+  if(q.has("protein")) d.protein=Math.max(0,parseInt(q.get("protein"),10)||0);
+  if(q.has("check")) d.done[q.get("check")]=true;
+  if(q.has("tab")&&["today","train","progress","routines"].includes(q.get("tab"))) S.tab=q.get("tab");
+  save(S.data);
+  history.replaceState({},"",location.pathname);
+}
+
+/* ============================ views ============================ */
+function ring(v,goal,col,label,unit){
+  const pct=goal?Math.min(100,v/goal*100):0;
+  return `<div class="metric"><div class="v">${v}${unit||""}</div><div class="l">${label}</div>
+    <div class="t"><i style="width:${pct}%;background:${col}"></i></div></div>`;
+}
+
+function vToday(){
+  const d=day(), n=nextW(), pt=proteinTarget();
+  const tasks=S.data.tasks;
+  const doneN=tasks.filter(t=>d.done[t.id]).length;
+  const now=new Date();
+  const dayName=now.toLocaleDateString(undefined,{weekday:"long"});
+  const dateStr=now.toLocaleDateString(undefined,{day:"numeric",month:"long"});
+
+  // last 7 days completion
+  let wk="";
+  for(let i=6;i>=0;i--){
+    const dt=new Date(Date.now()-i*864e5);
+    const k=dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0");
+    const rec=S.data.days[k], c=rec?tasks.filter(t=>rec.done[t.id]).length:0;
+    const pct=tasks.length?c/tasks.length*100:0;
+    wk+=`<div><div class="d">${dt.toLocaleDateString(undefined,{weekday:"narrow"})}</div>
+      <div class="p${i===0?" today":""}"><i style="height:${pct}%"></i></div></div>`;
+  }
+
+  return `<div class="pad">
+   <div style="padding-top:22px">
+     <div class="eyebrow">${esc(dayName)} · ${esc(dateStr)} · Week ${week()} of 17</div>
+     <div style="font-size:34px;font-weight:800;letter-spacing:-.03em;margin-top:6px;line-height:1">
+       ${doneN} of ${tasks.length}<span style="font-size:14px;font-weight:600;color:var(--steelSoft);letter-spacing:0"> done today</span></div>
+   </div>
+
+   <div class="dial">
+     ${ring(d.steps,STEP_TARGET,"var(--blue)","steps","")}
+     ${ring(d.water,WATER_TARGET,"var(--green)","water","/8")}
+     ${ring(d.protein,pt||140,"var(--red)","protein","g")}
+   </div>
+   <div class="tapz">
+     <button data-act="water">+ 1 cup</button>
+     <button data-act="protein">+ protein</button>
+     <button data-act="steps">set steps</button>
+   </div>
+   <button class="btn ghost small" data-act="paste" style="margin-top:7px">↓ Paste from Shortcut</button>
+   ${!pt?`<div style="font-size:11.5px;color:var(--steelSoft);margin-top:9px;line-height:1.5">
+     <button data-act="bw" style="background:none;border:none;padding:0;color:var(--blue);font-weight:700;text-decoration:underline">Set your bodyweight</button>
+     to get a real protein target instead of a placeholder.</div>`:
+     `<div style="font-size:11.5px;color:var(--steelSoft);margin-top:9px">Target ${pt}g — that's 1.8g per kg.</div>`}
+
+   <div style="margin-top:26px">
+     <div class="eyebrow">Today's list</div>
+     <div style="margin-top:10px">
+       ${tasks.map(t=>`<button class="check${d.done[t.id]?" on":""}" data-task="${esc(t.id)}">
+         <span class="box">✓</span><span class="tx">${esc(t.t)}<span class="sub">${esc(t.s||"")}</span></span>
+         ${DEFAULT_TASKS.some(x=>x.id===t.id)?"":`<span class="del" data-del="${esc(t.id)}">×</span>`}
+       </button>`).join("")}
+     </div>
+     <button class="btn ghost small" data-act="addtask" style="margin-top:4px">+ Add something</button>
+   </div>
+
+   <div style="margin-top:26px">
+     <div class="eyebrow">Last seven days</div>
+     <div class="week">${wk}</div>
+   </div>
+
+   <div style="margin-top:26px">
+     <div class="eyebrow">${trainedToday()?"Trained today":"Next session"}</div>
+     <div class="hd" style="font-size:24px">${trainedToday()?"Rest up":PROGRAM[n].name}</div>
+     ${trainedToday()?`<div style="font-size:13px;color:var(--steelSoft)">Logged. Eat, sleep, come back the day after tomorrow.</div>`
+       :`<button class="btn red" data-act="start" data-w="${n}" style="margin-top:8px">Start ${PROGRAM[n].name}</button>`}
+   </div>
+  </div>`;
+}
+
+function vRoutines(){
+  const url=location.origin+location.pathname;
+  return `<div class="pad">
+   <div style="padding:22px 0 14px;border-bottom:1px solid var(--line)">
+     <div class="eyebrow">6am alarm · 10:30pm lights out</div><div class="hd">Routines</div></div>
+
+   <div style="margin-top:22px"><div class="eyebrow" style="color:var(--yellow)">Morning — 6:00</div>
+     <div style="margin-top:10px">${MORNING.map(r=>`<div class="rt"><div class="h">${esc(r[0])}</div><div class="b">${esc(r[1])}</div></div>`).join("")}</div></div>
+
+   <div style="margin-top:24px"><div class="eyebrow" style="color:var(--blue)">Wind down — from 9:30</div>
+     <div style="margin-top:10px">${BEDTIME.map(r=>`<div class="rt"><div class="h">${esc(r[0])}</div><div class="b">${esc(r[1])}</div></div>`).join("")}</div></div>
+
+   <div style="margin-top:28px;padding-top:20px;border-top:2px solid var(--steel)">
+     <div class="eyebrow" style="color:var(--steel)">Wire it to your iPhone</div>
+     <div style="font-size:13px;color:var(--steelSoft);margin-top:8px;line-height:1.65">
+       A web app can't read Health or set alarms directly — iOS doesn't allow it. The Shortcuts app is
+       the bridge. Each of these takes about two minutes to set up once.</div>
+
+     <div class="rt" style="margin-top:14px">
+       <span class="pill" style="background:var(--blue);color:#fff">Health</span>
+       <div class="h" style="margin-top:7px">Import your step count</div>
+       <div class="b">Shortcuts → new Shortcut → <strong>Find Health Samples</strong> (Steps, today, Sum) →
+       <strong>Open URL</strong> with:<br><code>${esc(url)}?steps=</code> and drop the Health result on the end.
+       Run it any time, or set an Automation for 9pm daily.</div>
+     </div>
+
+     <div class="rt">
+       <span class="pill" style="background:var(--yellow);color:var(--steel)">Alarm</span>
+       <div class="h" style="margin-top:7px">6am wake-up</div>
+       <div class="b">Shortcuts → Automation → <strong>When alarm is stopped</strong> → Open URL
+       <code>${esc(url)}?tab=today</code>. Your list is the first thing on screen instead of Instagram.</div>
+     </div>
+
+     <div class="rt">
+       <span class="pill" style="background:var(--green);color:#fff">Water</span>
+       <div class="h" style="margin-top:7px">One-tap water logging</div>
+       <div class="b">A Shortcut that opens <code>${esc(url)}?water=1</code>. Put it on your home screen
+       as a widget, or say "Hey Siri, water".</div>
+     </div>
+
+     <div class="rt">
+       <span class="pill" style="background:var(--steel);color:#fff">Reminders</span>
+       <div class="h" style="margin-top:7px">The nagging</div>
+       <div class="b">Don't build this here — iOS web apps can't send reliable notifications. Use the
+       Reminders app with repeating daily alerts, or Automations at fixed times. It'll work better than
+       anything this app could do.</div>
+     </div>
+   </div>
+
+   <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+     <button class="btn ghost small" data-act="export">Back up data</button>
+     <button class="btn ghost small" data-act="import">Restore</button>
+   </div>
+   <div style="font-size:11.5px;color:var(--steelSoft);margin-top:10px;line-height:1.55">
+     Everything is stored on this phone only. iOS can clear web app storage if you don't open it for a
+     while — back up every few weeks.</div>
+  </div>`;
+}
+
+/* ---------------------- training views ---------------------- */
+function vTrain(){
+  const n=nextW(), t=S.data.sessions.length;
+  return `<div class="pad">
+   <div style="padding-top:22px;border-bottom:1px solid var(--line);padding-bottom:20px">
+     <div class="eyebrow">Revo Northbridge</div>
+     <div style="font-size:40px;font-weight:800;line-height:.95;letter-spacing:-.03em;margin-top:8px">
+       ${t} of ${TARGET}<span style="font-size:15px;font-weight:600;color:var(--steelSoft);letter-spacing:0"> sessions</span></div>
+     <div class="bar"><i style="width:${Math.min(100,t/TARGET*100)}%"></i></div>
+     <div style="font-size:12px;color:var(--steelSoft);margin-top:10px">Showing up is the whole program. Everything else is detail.</div>
+   </div>
+   <div style="margin-top:24px">
+     <div class="eyebrow">Up next</div><div class="hd">${PROGRAM[n].name}</div>
+     <div style="font-size:13px;color:var(--steelSoft);margin-bottom:16px">${PROGRAM[n].lifts.map(l=>l.name).join(" · ")} · core finisher</div>
+     <button class="btn red" data-act="start" data-w="${n}">Start ${PROGRAM[n].name}</button>
+     <button class="btn ghost small" data-act="start" data-w="${n==="A"?"B":"A"}">Do ${PROGRAM[n==="A"?"B":"A"].name} instead</button>
+   </div>
+   <div class="note"><div class="eyebrow" style="color:var(--blue)">Northbridge notes</div>
+     <div style="margin-top:8px">It's a small floor and it fills up between 5 and 7. Every exercise has a swap — tap
+     <strong>How to do it</strong> and pick an alternative rather than waiting for a machine. The squat racks and the
+     dumbbells are what you can always count on.</div></div>
+   ${t===0?`<div class="note" style="border-style:dashed;background:none"><strong>First two weeks: go light.</strong>
+     Pick weights that feel easy and learn the movements. It should feel like you're not working hard enough — that's
+     correct. You're buying the next fourteen weeks.</div>`:""}
+  </div>`;
+}
+
+function card(l,i){
+  const t=target(S.workout,l), rows=S.entries[l.id]||[], open=S.open[l.id];
+  const done=rows.filter(r=>r.reps!=="").length===l.sets;
+  const unit=l.unit==="sec"?"sec":l.unit==="bw"?"reps":"kg";
+  let h=`<div class="card${done?" done":""}" data-card="${l.id}">
+   <div style="display:flex;justify-content:space-between;gap:10px">
+    <div style="flex:1"><div class="eyebrow">${String(i+1).padStart(2,"0")} · ${l.sets} × ${l.lo}–${l.hi}${l.unit==="sec"?" sec":""}</div>
+      <h3>${esc(l.name)}</h3>
+      ${l.from?`<div style="font-family:var(--mono);font-size:10px;color:var(--blue);margin-top:3px;letter-spacing:.06em">SWAPPED FROM ${esc(l.from.toUpperCase())}</div>`:""}
+    </div>
+    <div class="tick" style="font-family:var(--mono);font-size:11px;color:var(--green);font-weight:700;padding-top:12px">${done?"✓ DONE":""}</div>
+   </div>
+   <button class="howbtn" data-how="${l.id}">${open?"− HIDE FORM":"+ HOW TO DO IT"}</button>`;
+  if(open){
+    h+=`<div class="how">${svg(l.dia)}<div class="cues">
+      ${l.cues.map(c=>`<div class="cue"><span>—</span><span>${esc(c)}</span></div>`).join("")}
+      <div style="font-family:var(--mono);font-size:9px;color:var(--steelSoft);margin-top:8px;letter-spacing:.08em">GREY = START · DARK = FINISH</div></div>`;
+    if(l.swaps&&l.swaps.length) h+=`<div class="swaps"><div class="eyebrow">Machine taken?</div>
+      ${l.swaps.map(s=>`<button class="swap" data-swap="${l.id}" data-alt="${s.id}"><b>${esc(s.name)}</b><i>${esc(s.why)}</i></button>`).join("")}</div>`;
+    h+=`</div>`;
+  }
+  if(t.earned) h+=`<div class="loadup">▲ LOAD UP — you hit ${l.hi} on every set last time</div>`;
+  h+=`<div style="margin-top:12px">`+rows.map((r,s)=>{
+    const f=r.reps!=="", tp=f&&Number(r.reps)>=l.hi;
+    return `<div class="setrow"><div class="setno">${s+1}</div>
+     ${l.unit==="bw"?`<div style="font-family:var(--mono);font-size:11px;color:var(--steelSoft)">bodyweight</div>`
+      :`<input class="inp" inputmode="decimal" value="${esc(r.weight)}" placeholder="${l.unit==="sec"?"—":"kg"}"
+         ${l.unit==="sec"?"disabled":""} data-l="${l.id}" data-s="${s}" data-f="weight">`}
+     <input class="inp${f?(tp?" top":" filled"):""}" inputmode="numeric" value="${esc(r.reps)}" placeholder="${unit}"
+       data-l="${l.id}" data-s="${s}" data-f="reps"></div>`;
+  }).join("")+`</div>`;
+  if(t.prev) h+=`<div class="last">LAST: ${t.prev.map(r=>l.unit==="bw"?(r.reps||"–"):`${r.weight||"–"}×${r.reps||"–"}`).join("   ")}</div>`;
+  return h+`</div>`;
+}
+
+function vSession(){
+  const L2=lifts(), main=L2.slice(0,PROGRAM[S.workout].lifts.length), core=L2.slice(PROGRAM[S.workout].lifts.length);
+  const logged=Object.values(S.entries).flat().filter(r=>r.reps!=="").length;
+  const total=L2.reduce((n,l)=>n+l.sets,0);
+  return `<div class="pad" style="padding-bottom:130px">
+   <div class="sticky"><div style="display:flex;justify-content:space-between;align-items:center">
+     <div><div class="eyebrow">In progress</div><div style="font-size:22px;font-weight:800">${PROGRAM[S.workout].name}</div></div>
+     <div style="font-family:var(--mono);font-size:13px;color:var(--steelSoft);font-weight:600">${logged}/${total}</div>
+   </div></div>
+   ${S.warm?`<div class="warm"><div style="display:flex;justify-content:space-between;align-items:center">
+     <div class="eyebrow" style="color:var(--yellow)">Warm up first</div>
+     <button data-act="warmdone" style="background:none;border:none;color:#8A949E;font-family:var(--mono);font-size:10px;letter-spacing:.14em">DONE</button>
+   </div>${WARMUP.map(w=>`<div>${esc(w)}</div>`).join("")}</div>`:""}
+   <div style="margin-top:16px">${main.map(card).join("")}</div>
+   <div style="margin:26px 0 12px;border-top:2px solid var(--steel);padding-top:14px">
+     <div class="eyebrow" style="color:var(--steel)">Core finisher</div>
+     <div style="font-size:12px;color:var(--steelSoft);margin:6px 0 14px;line-height:1.5">Three times a week, not daily —
+     abs recover like any other muscle. This thickens what's underneath; the deficit is what uncovers it.</div>
+     ${core.map(card).join("")}</div>
+   <button class="btn green" data-act="finish" ${logged===0?"disabled":""}>Finish and save</button>
+   <button class="btn ghost small" data-act="cancel">Discard session</button>
+  </div>`;
+}
+
+function vProgress(){
+  const all=PROGRAM.A.lifts.concat(PROGRAM.B.lifts);
+  const rows=all.map(l=>{
+    const pts=S.data.sessions.map(s=>{const r=s.entries[l.id];if(!r)return null;
+      const w=r.map(x=>Number(x.weight)).filter(n=>!isNaN(n)&&n>0);
+      return w.length?Math.max.apply(null,w):null}).filter(v=>v!==null);
+    return {l,pts}}).filter(x=>x.pts.length);
+  return `<div class="pad">
+   <div style="padding:22px 0 16px;border-bottom:1px solid var(--line)">
+     <div class="eyebrow">Working weights</div><div class="hd">Progress</div></div>
+   ${rows.length?rows.map(({l,pts})=>{
+     const max=Math.max.apply(null,pts), now=pts[pts.length-1], ch=now-pts[0];
+     return `<div style="margin-top:22px"><div style="display:flex;justify-content:space-between;align-items:baseline">
+       <div style="font-size:15px;font-weight:700">${esc(l.name)}</div>
+       <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${ch>0?"var(--green)":"var(--steelSoft)"}">${now}kg ${ch>0?`(+${ch})`:""}</div>
+     </div><div class="spark">${pts.map((p,i)=>`<i class="${i===pts.length-1?"now":""}" style="height:${Math.max(8,p/max*100)}%"></i>`).join("")}</div></div>`;
+   }).join(""):`<div style="font-size:14px;color:var(--steelSoft);margin-top:24px;line-height:1.6">Nothing logged yet. Finish a session and your numbers show up here.</div>`}
+
+   <div style="margin-top:30px;padding-top:20px;border-top:2px solid var(--steel)">
+     <div class="eyebrow" style="color:var(--steel)">Pull-up ladder</div>
+     <div class="how" style="margin-top:12px">${svg("hang")}</div>
+     <div style="font-size:13px;color:var(--steelSoft);margin-top:12px;line-height:1.6">Tap the rung you're on. Not being able
+     to do one yet is the normal starting point — the lat pulldown is already training it.</div>
+     <div style="margin-top:14px">${RUNGS.map((r,i)=>{
+       const on=i===S.data.rung, past=i<S.data.rung;
+       return `<button class="rung${on?" on":past?" past":""}" data-rung="${i}"><div style="display:flex;gap:12px;align-items:baseline">
+         <div style="font-family:var(--mono);font-size:11px;font-weight:700;opacity:.7">${past?"✓":String(i+1).padStart(2,"0")}</div>
+         <div style="flex:1"><div style="font-size:15px;font-weight:700">${esc(r[0])}</div>
+         <div style="font-size:12.5px;margin-top:3px;line-height:1.5;opacity:${on?".85":".7"}">${esc(r[1])}</div></div></div></button>`}).join("")}</div>
+   </div>
+
+   <div class="note"><div class="eyebrow">Every four weeks</div>
+     <div style="margin-top:8px">Photos front, side and back — same spot, same light, same time of morning. Waist measured at
+     the navel. These tell the truth; daily scale weight doesn't, especially with creatine pulling water in early on.</div></div>
+  </div>`;
+}
+
+function vSummary(){
+  const r=S.result;
+  return `<div class="pad"><div style="padding-top:30px">
+   <div class="eyebrow" style="color:var(--green)">Saved</div>
+   <div style="font-size:34px;font-weight:800;letter-spacing:-.03em;margin-top:6px">${r.sets} sets logged</div></div>
+   ${r.earned.length?`<div style="margin-top:26px">
+     <div style="background:var(--yellow);padding:12px 14px"><div class="eyebrow" style="color:var(--steel)">Add weight next time</div></div>
+     <div style="border:1px solid var(--line);border-top:none">${r.earned.map(e=>`
+       <div style="display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--chalkDeep);font-size:14px">
+       <span style="font-weight:600">${esc(e.name)}</span><span style="font-family:var(--mono);font-weight:700">${e.from} → ${e.to} kg</span></div>`).join("")}</div></div>`
+   :`<div style="margin-top:24px;font-size:14px;color:var(--steelSoft);line-height:1.6">Same weights next time. Climb to the
+     top of the rep range on every set and the app will tell you to load up.</div>`}
+   <div style="margin-top:30px"><button class="btn" data-act="done">Done</button></div></div>`;
+}
+
+/* ============================ chrome ============================ */
+const ICONS={
+ today:'<path d="M3 10h18M3 6h18M3 14h18M3 18h18"/>',
+ train:'<path d="M4 9v6M20 9v6M7 6v12M17 6v12M7 12h10"/>',
+ progress:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
+ routines:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'
+};
+function tabbar(){
+  const t=[["today","Today"],["train","Train"],["progress","Progress"],["routines","Routines"]];
+  return `<nav class="tabs">${t.map(([k,l])=>`<button class="tab${S.tab===k&&!S.view?" on":""}" data-tab="${k}">
+    <svg viewBox="0 0 24 24">${ICONS[k]}</svg><span class="lb">${l}</span></button>`).join("")}</nav>`;
+}
+
+function render(){
+  let body;
+  if(S.view==="session") body=vSession();
+  else if(S.view==="summary") body=vSummary();
+  else body={today:vToday,train:vTrain,progress:vProgress,routines:vRoutines}[S.tab]();
+  document.getElementById("app").innerHTML=
+   `<div style="padding:14px 18px 0;display:flex;justify-content:space-between;align-items:center">
+     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.24em;font-weight:700">LIFT&nbsp;LOG</div>
+     <div class="plates"><i style="background:var(--red)"></i><i style="background:var(--blue)"></i>
+     <i style="background:var(--yellow)"></i><i style="background:var(--green)"></i></div>
+   </div>`+body;
+  const old=document.querySelector(".tabs"); if(old) old.remove();
+  if(S.view!=="session") document.body.insertAdjacentHTML("beforeend",tabbar());
+  if(S.view!=="session") stopTimer();
+}
+
+/* -------- live input updates without re-render (keeps focus) -------- */
+document.addEventListener("input",e=>{
+  const el=e.target; if(!el.dataset||!el.dataset.l) return;
+  const id=el.dataset.l, s=Number(el.dataset.s), f=el.dataset.f;
+  const lift=lifts().find(x=>x.id===id); if(!lift) return;
+  S.entries[id][s][f]=el.value;
+  if(f==="weight"){
+    S.entries[id].forEach((r,i)=>{if(i>s&&r.reps===""){r.weight=el.value;
+      const inp=document.querySelector(`input[data-l="${id}"][data-s="${i}"][data-f="weight"]`);
+      if(inp) inp.value=el.value;}});
+  }
+  if(f==="reps"){
+    const filled=el.value!=="", top=filled&&Number(el.value)>=lift.hi;
+    el.className="inp"+(filled?(top?" top":" filled"):"");
+    const c=document.querySelector(`[data-card="${id}"]`);
+    const done=S.entries[id].filter(r=>r.reps!=="").length===lift.sets;
+    c.classList.toggle("done",done); c.querySelector(".tick").textContent=done?"✓ DONE":"";
+    updateCount(); if(filled) startTimer();
+  }
+});
+function updateCount(){
+  const n=Object.values(S.entries).flat().filter(r=>r.reps!=="").length;
+  const total=lifts().reduce((a,l)=>a+l.sets,0);
+  const el=document.querySelector(".sticky div[style*='mono']"); if(el) el.textContent=`${n}/${total}`;
+  const fin=document.querySelector("[data-act='finish']"); if(fin) fin.disabled=n===0;
+}
+
+/* =========================== rest timer =========================== */
+function startTimer(){
+  stopTimer(); let left=REST;
+  const el=document.createElement("div"); el.className="rest"; el.id="rest";
+  el.innerHTML=`<div style="display:flex;align-items:baseline;justify-content:space-between">
+    <div class="eyebrow" style="color:#8A949E">Rest</div><div class="t">${left}s</div>
+    <button id="skiprest" style="background:none;border:none;color:#8A949E;font-family:var(--mono);font-size:11px;letter-spacing:.14em">SKIP</button>
+  </div><div class="track"><i style="width:100%"></i></div>`;
+  document.body.appendChild(el);
+  el.querySelector("#skiprest").onclick=stopTimer;
+  S.timer=setInterval(()=>{left--;
+    const t=el.querySelector(".t"), b=el.querySelector(".track > i");
+    if(t) t.textContent=Math.max(0,left)+"s";
+    if(b) b.style.width=Math.max(0,left/REST*100)+"%";
+    if(left<=0){ if(navigator.vibrate) navigator.vibrate([120,60,120]); stopTimer(); }},1000);
+}
+function stopTimer(){ if(S.timer){clearInterval(S.timer);S.timer=null} const e=document.getElementById("rest"); if(e) e.remove(); }
+
+/* ============================ actions ============================ */
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button, [data-del]"); if(!b) return;
+  const d=b.dataset;
+
+  if(d.del!==undefined){ e.stopPropagation();
+    S.data.tasks=S.data.tasks.filter(t=>t.id!==d.del); save(S.data); render(); return; }
+  if(d.tab){ S.view=null; S.tab=d.tab; render(); return; }
+  if(d.task!==undefined){ const dd=day(); dd.done[d.task]=!dd.done[d.task]; save(S.data); render(); return; }
+  if(d.how!==undefined){ S.open[d.how]=!S.open[d.how]; render(); return; }
+  if(d.swap!==undefined){
+    const src=base(S.workout).find(x=>x.id===d.swap), alt=src.swaps.find(x=>x.id===d.alt);
+    S.swaps[d.swap]=alt; delete S.entries[d.swap];
+    S.entries[alt.id]=Array.from({length:src.sets},()=>({weight:"",reps:""}));
+    S.open[d.swap]=false; render(); return; }
+  if(d.rung!==undefined){ S.data.rung=Number(d.rung); save(S.data); render(); return; }
+
+  const dd=day();
+  switch(d.act){
+    case "paste": pasteFromClipboard(); break;
+    case "water": dd.water=Math.min(30,dd.water+1); save(S.data); render(); break;
+    case "protein": {
+      const v=prompt("Protein just eaten (grams)","30");
+      if(v!==null){ dd.protein=Math.max(0,dd.protein+(parseInt(v,10)||0)); save(S.data); render(); }
+      break; }
+    case "steps": {
+      const v=prompt("Steps today","" + (dd.steps||""));
+      if(v!==null){ dd.steps=Math.max(0,parseInt(v,10)||0); save(S.data); render(); }
+      break; }
+    case "bw": {
+      const v=prompt("Bodyweight in kg — used only to work out your protein target","");
+      const n=parseFloat(v); if(n>0){ S.data.bodyweight=n; save(S.data); render(); }
+      break; }
+    case "addtask": {
+      const v=prompt("What do you want to do every day?");
+      if(v&&v.trim()){ S.data.tasks.push({id:"c"+Date.now(),t:v.trim(),s:""}); save(S.data); render(); }
+      break; }
+    case "start": S.workout=d.w; S.swaps={}; S.open={}; S.warm=true; S.entries={};
+      base(d.w).forEach(l=>{S.entries[l.id]=Array.from({length:l.sets},()=>({weight:target(d.w,l).weight||"",reps:""}))});
+      S.view="session"; render(); break;
+    case "warmdone": S.warm=false; render(); break;
+    case "cancel": stopTimer(); S.view=null; S.tab="train"; render(); break;
+    case "done": S.view=null; S.tab="today"; render(); break;
+    case "finish": finish(); break;
+    case "export": exportData(); break;
+    case "import": importData(); break;
+  }
+});
+
+
+/* --- clipboard handoff: iOS gives a home-screen web app its own storage
+   container, separate from Safari. A Shortcut that opens a URL writes to
+   Safari's copy, not this one. So instead the Shortcut copies "steps=8234"
+   to the clipboard and opens the app, and this reads it. --- */
+function pasteFromClipboard(){
+  if(!navigator.clipboard||!navigator.clipboard.readText){
+    const v=prompt("Paste what the Shortcut copied"); if(v) applyPayload(v); return; }
+  navigator.clipboard.readText().then(applyPayload).catch(()=>{
+    const v=prompt("iOS blocked the automatic read. Paste it here instead:");
+    if(v) applyPayload(v); });
+}
+function applyPayload(txt){
+  const raw=String(txt||"").trim(); if(!raw){alert("Clipboard was empty.");return}
+  const q=new URLSearchParams(raw.replace(/^[?&]/,"")); const dd=day(); let n=0;
+  if(q.has("steps")){ dd.steps=Math.max(0,parseInt(q.get("steps"),10)||0); n++; }
+  if(q.has("water")){ dd.water=Math.min(30,dd.water+(parseInt(q.get("water"),10)||1)); n++; }
+  if(q.has("protein")){ dd.protein=Math.max(0,parseInt(q.get("protein"),10)||0); n++; }
+  if(q.has("check")){ dd.done[q.get("check")]=true; n++; }
+  if(!n){ const bare=parseInt(raw.replace(/[^0-9]/g,""),10);   // a plain number = steps
+    if(bare>0){ dd.steps=bare; n++; } }
+  if(n){ save(S.data); render(); }
+  else alert("Couldn't read that. The Shortcut should copy something like  steps=8234");
+}
+
+function finish(){
+  const clean={}; let sets=0;
+  Object.keys(S.entries).forEach(id=>{
+    const kept=S.entries[id].filter(r=>r.reps!=="");
+    if(kept.length){clean[id]=kept;sets+=kept.length}});
+  const earned=[];
+  lifts().forEach(l=>{
+    const r=clean[l.id]; if(!r||r.length<l.sets||l.inc===0) return;
+    if(r.every(x=>Number(x.reps)>=l.hi)){ const w=Number(r[0].weight);
+      if(!isNaN(w)&&w>0) earned.push({name:l.name,from:w,to:w+l.inc}); }});
+  S.data.sessions.push({id:Date.now(),date:new Date().toISOString(),workout:S.workout,entries:clean});
+  save(S.data);
+  S.result={sets,earned}; stopTimer(); S.view="summary"; render();
+}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(S.data,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="lift-log-backup-"+todayKey()+".json"; a.click(); URL.revokeObjectURL(a.href);
+}
+function importData(){
+  const i=document.createElement("input"); i.type="file"; i.accept="application/json";
+  i.onchange=()=>{const f=i.files[0]; if(!f) return; const r=new FileReader();
+    r.onload=()=>{try{const d=JSON.parse(r.result); if(!d.sessions) throw 0;
+      S.data=migrate(d); save(S.data); render(); alert("Restored "+d.sessions.length+" sessions.");
+    }catch(e){alert("That file isn't a Lift Log backup.")}};
+    r.readAsText(f)};
+  i.click();
+}
+
+/* ============================== boot ============================== */
+handleParams();
+render();
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&!S.view) render(); });
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
